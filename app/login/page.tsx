@@ -6,15 +6,36 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
 
 function LoginContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [rememberEmail, setRememberEmail] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [isShaking, setIsShaking] = useState(false)
+  const [isExiting, setIsExiting] = useState(false)
+  const [exitDirection, setExitDirection] = useState<'left' | 'right' | 'fade'>('fade')
 
-  // Load remembered email on mount and check for success message
+  const triggerShake = () => {
+    setIsShaking(true)
+    setTimeout(() => setIsShaking(false), 400)
+  }
+
+  const triggerExit = (url: string, direction: 'left' | 'right' | 'fade') => {
+    setExitDirection(direction)
+    setIsExiting(true)
+    setTimeout(() => {
+      router.push(url)
+    }, 300)
+  }
+
+  // Load remembered email on mount, check for success message, and prefetch register page
   useEffect(() => {
+    router.prefetch('/register')
+
     const saved = localStorage.getItem('marketHub_rememberEmail')
     if (saved) {
       setRememberEmail(saved)
@@ -27,7 +48,7 @@ function LoginContent() {
       const timer = setTimeout(() => setSuccessMessage(''), 5000)
       return () => clearTimeout(timer)
     }
-  }, [searchParams])
+  }, [searchParams, router])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5 relative overflow-hidden">
@@ -41,7 +62,27 @@ function LoginContent() {
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-card border border-border rounded-lg shadow-lg p-8 space-y-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97, y: 10 }}
+            animate={
+              isShaking
+                ? { x: [-10, 10, -10, 10, -5, 5, 0], opacity: 1, scale: 1, y: 0 }
+                : isExiting
+                ? exitDirection === 'left'
+                  ? { x: -30, opacity: 0, scale: 0.97 }
+                  : exitDirection === 'right'
+                  ? { x: 30, opacity: 0, scale: 0.97 }
+                  : { opacity: 0, scale: 0.97 }
+                : { opacity: 1, scale: 1, y: 0 }
+            }
+            transition={{
+              type: 'spring',
+              stiffness: 100,
+              damping: 15,
+              x: isShaking ? { duration: 0.4 } : undefined
+            }}
+            className="bg-card border border-border rounded-2xl shadow-xl p-8 space-y-8 hover:shadow-2xl hover:border-accent/20"
+          >
             {/* Logo Section */}
             <div className="text-center space-y-2">
               <div className="flex items-center justify-center gap-2">
@@ -73,7 +114,11 @@ function LoginContent() {
             )}
 
             {/* Login Form */}
-            <LoginForm />
+            <LoginForm 
+              onError={triggerShake} 
+              onSuccess={(url) => triggerExit(url, 'fade')} 
+              onSwitchRegister={() => triggerExit('/register', 'left')} 
+            />
 
             {/* Footer */}
             <div className="text-center text-xs text-muted-foreground space-y-2">
@@ -94,7 +139,7 @@ function LoginContent() {
                 </Link>
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Back to Home Link */}
           <div className="text-center mt-6">

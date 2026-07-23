@@ -9,7 +9,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 
-export function LoginForm() {
+interface LoginFormProps {
+  onError?: () => void
+  onSuccess?: (url: string) => void
+  onSwitchRegister?: () => void
+}
+
+export function LoginForm({ onError, onSuccess, onSwitchRegister }: LoginFormProps) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -46,8 +52,10 @@ export function LoginForm() {
         if (data.requiresEmailVerification) {
           setUnverifiedEmail(email)
           setError(null)
+          onError?.()
         } else {
           setError(data.error || 'Login failed. Please try again.')
+          onError?.()
         }
       } else {
         // Store email if remember me is checked
@@ -58,10 +66,15 @@ export function LoginForm() {
         }
         
         // Redirect to dashboard or home
-        router.push('/dashboard')
+        if (onSuccess) {
+          onSuccess('/dashboard')
+        } else {
+          router.push('/dashboard')
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
+      onError?.()
       console.error('Login error:', err)
     } finally {
       setIsLoading(false)
@@ -277,9 +290,19 @@ export function LoginForm() {
       {/* Sign Up Link */}
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-semibold text-primary hover:underline">
-          Sign up
-        </Link>
+        {onSwitchRegister ? (
+          <button
+            type="button"
+            onClick={onSwitchRegister}
+            className="font-semibold text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+          >
+            Sign up
+          </button>
+        ) : (
+          <Link href="/register" className="font-semibold text-primary hover:underline">
+            Sign up
+          </Link>
+        )}
       </p>
     </form>
   )

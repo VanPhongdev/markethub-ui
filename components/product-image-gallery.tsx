@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface ProductImageGalleryProps {
@@ -105,14 +106,25 @@ export function ProductImageGallery({
               : {}
           }
         >
-          <Image
-            src={currentImage}
-            alt={productName}
-            fill
-            className="object-cover"
-            priority
-            unoptimized
-          />
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={selectedIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="absolute inset-0 w-full h-full"
+            >
+              <Image
+                src={currentImage}
+                alt={productName}
+                fill
+                className="object-cover"
+                priority
+                unoptimized
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* Navigation Arrows */}
